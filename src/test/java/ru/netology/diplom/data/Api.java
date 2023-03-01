@@ -1,4 +1,4 @@
-package ru.netology.web.data;
+package ru.netology.diplom.data;
 
 import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;

@@ -1,7 +1,9 @@
-package ru.netology.web.page;
+package ru.netology.diplom.page;
 
+import com.codeborne.selenide.CollectionCondition;
 import com.codeborne.selenide.SelenideElement;
-import ru.netology.web.data.Card;
+import ru.netology.diplom.data.Card;
+
 import java.time.Duration;
 
 import static com.codeborne.selenide.Condition.*;
@@ -10,40 +12,73 @@ import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.$$;
 
 public class PaymentPage {
-    private final SelenideElement heading = $$("h3").find(text("Оплата по карте"));
-    private final SelenideElement cardNumberField = $(byText("Номер карты")).parent().$(".input__control");
-    private final SelenideElement monthField = $(byText("Месяц")).parent().$(".input__control");
-    private final SelenideElement yearField = $(byText("Год")).parent().$(".input__control");
-    private final SelenideElement ownerField = $(byText("Владелец")).parent().$(".input__control");
-    private final SelenideElement cvcField = $(byText("CVC/CVV")).parent().$(".input__control");
-    private final SelenideElement continueButton = $$("button").find(exactText("Продолжить"));
-    private final SelenideElement notificationOK = $(".notification_status_ok");
-    private final SelenideElement notificationError = $(".notification_status_error");
-    private final SelenideElement inputInvalid = $(".input__sub");
+    private final SelenideElement errorNotification = $(byText("Ошибка! Банк отказал в проведении операции."));
+    private final SelenideElement cardNumberInput = $("input[placeholder='0000 0000 0000 0000']");
+    private final SelenideElement monthInput = $("input[placeholder='03']");
+    private final SelenideElement yearInput = $("input[placeholder='24']");
+    private final SelenideElement cvcInput = $("input[placeholder='999']");
+    private final SelenideElement holderInput = $$(".input__control").get(3);
+    private final SelenideElement continueButton = $$(".button").find(exactText("Продолжить"));
 
     public PaymentPage() {
-        heading.shouldBe(visible);
+        SelenideElement headingPayment = $$("h3.heading").find(exactText("Оплата по карте"));
+        headingPayment.shouldBe(visible);
     }
 
-    public void fillData(Card card) {
-        cardNumberField.setValue(card.getNumber());
-        monthField.setValue(card.getMonth());
-        yearField.setValue(card.getYear());
-        ownerField.setValue(card.getHolder());
-        cvcField.setValue(card.getCvc());
+    public void fillData(Card cardInfo) {
+        cardNumberInput.setValue(cardInfo.getNumber());
+        monthInput.setValue(cardInfo.getMonth());
+        yearInput.setValue(cardInfo.getYear());
+        holderInput.setValue(cardInfo.getHolder());
+        cvcInput.setValue(cardInfo.getCvc());
         continueButton.click();
     }
 
     public void successfulPayment() {
-        notificationOK.shouldBe(visible, Duration.ofSeconds(15));
+        $(".notification_status_ok")
+                .shouldHave(text("Успешно Операция одобрена Банком."), Duration.ofSeconds(15)).shouldBe(visible);
     }
 
-    public void checkErrorMessageIsDisplayed() {
-        notificationError.shouldBe(visible, Duration.ofSeconds(15));
+    public boolean showErrorMessage() {
+        errorNotification.shouldBe(visible, Duration.ofSeconds(15));
+        return false;
+    }
+    public void invalidPaymentDebitCard() {
+        $(".notification_status_error .notification__content")
+                .shouldHave(text("Ошибка! Банк отказал в проведении операции."), Duration.ofSeconds(20)).shouldBe(visible);
     }
 
-    public boolean checkInvalidInputError() {
-        return inputInvalid.isDisplayed();
+    public void checkInvalidFormat() {
+        $(".input__sub").shouldBe(visible).shouldHave(text("Неверный формат"), Duration.ofSeconds(15));
     }
 
+    public void checkInvalidCardValidityPeriod() {
+        $(".input__sub").shouldBe(visible)
+                .shouldHave(text("Неверно указан срок действия карты"), Duration.ofSeconds(15));
+    }
+
+    public void checkCardExpired() {
+        $(".input__sub").shouldBe(visible)
+                .shouldHave(text("Истёк срок действия карты"), Duration.ofSeconds(15));
+    }
+
+    public void checkInvalidOwner() {
+        $(".input__sub").shouldBe(visible)
+                .shouldHave(text("Введите имя и фамилию, указанные на карте"), Duration.ofSeconds(15));
+    }
+
+    public void checkEmptyField() {
+        $(".input__sub").shouldBe(visible)
+                .shouldHave(text("Поле обязательно для заполнения"), Duration.ofSeconds(15));
+    }
+
+    public void incorrectOwner() {
+        $(".input__sub").shouldBe(visible)
+                .shouldHave(text("Значение поля может содержать только латинские буквы и дефис"), Duration.ofSeconds(15));
+    }
+
+    public void checkAllFieldsAreRequired() {
+        $$(".input__sub").shouldHave(CollectionCondition.size(5));
+
+    }
 }
